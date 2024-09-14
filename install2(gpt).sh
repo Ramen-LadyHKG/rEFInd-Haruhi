@@ -1,100 +1,146 @@
 #!/bin/bash
 
-# Installation prompts
-echo -e "This script will perform the following actions:"
-echo -e " 1. Create a directory: $HOME/scripts/refind_banner_update"
-echo -e " 2. Copy the 'refind_banner_update.sh' script to: $HOME/scripts/refind_banner_update/"
-echo -e " 3. Install the 'rEFInd-Haruhi' theme to your rEFInd theme directory"
-echo -e " 4. Optionally install a preconfigured 'refind.conf' to your ESP"
-echo -e " 5. Backup existing 'refind.conf' (if present) to 'refind.conf.original_backupbyscript'"
-echo -e " 6. Copy the new 'refind.conf' to the appropriate directory"
-echo -e ""
-
-# Proceed confirmation
-read -p "Do you want to proceed? (yes/no) " yn
-case "${yn,,}" in  # Convert input to lowercase for consistency
-        yes ) echo -e "Ok, proceeding with installation...\n";;
-        no ) echo -e "Installation cancelled. Exiting the program..."; exit;;
-        * ) echo -e "Invalid response. Exiting the program..."; exit 1;;
-esac
-
-# Check for root privileges
-if [ "$USER" == "root" ]; then
-        echo -e "Do not run this script as root. Exiting the program..."
+# Function to detect ESP mount point
+detect_esp() {
+    if sudo test -d "/boot/efi/EFI/refind"; then
+        ESP_location="/boot/efi/EFI"
+    elif sudo test -d "/boot/EFI/refind"; then
+        ESP_location="/boot/EFI"
+    else
+        echo "ESP not found. Please ensure your EFI partition is mounted."
         exit 1
-fi
+    fi
+}
 
-# Create the scripts directory if it doesn't exist
-if [ ! -d "$HOME/scripts" ]; then
-        echo -e "Creating directory: $HOME/scripts..."
-        mkdir -p "$HOME/scripts"
-else
-        echo -e "Directory $HOME/scripts already exists."
-fi
+# Detect ESP location at the beginning
+detect_esp
 
-# Create refind_banner_update directory and copy the script
-if [ ! -d "$HOME/scripts/refind_banner_update" ]; then
-        echo -e "Copying 'refind_banner_update.sh' to $HOME/scripts/refind_banner_update..."
-        mkdir "$HOME/scripts/refind_banner_update/"
-        cp "refind_banner_update.sh" "$HOME/scripts/refind_banner_update/refind_banner_update.sh"
-else
-        echo -e "'refind_banner_update' is already installed. Exiting the program..."
-        exit 1
-fi
+# Display welcome message and installation status
+echo "====== Welcome to rEFInd-Haruhi Install script ======"
+echo ""
 
-# rEFInd theme installation
-echo -e "Installing the 'rEFInd-Haruhi' theme to your rEFInd theme directory..."
+# Function to detect rEFInd installation status
+detect_refind() {
+    if sudo test -d "$ESP_location/refind"; then
+        echo "rEFInd install [status: Installed]"
+        refind_status="Installed"
+    else
+        echo "rEFInd install [status: Not Installed]"
+        refind_status="Not Installed"
+    fi
+}
 
-# Check for ESP directories and install the theme
-ESP_DIRS=("/boot/efi/EFI/refind" "/boot/EFI/refind")
-REFIND_INSTALLED=false
+# Function to detect refind_banner_update.sh installation status
+detect_banner_update() {
+    if test -f "$HOME/scripts/refind_banner_update/refind_banner_update.sh"; then
+        echo "refind_banner_update.sh install [status: Installed] ($HOME/scripts/refind_banner_update/refind_banner_update.sh)"
+        banner_update_status="Installed"
+    else
+        echo "refind_banner_update.sh install [status: Not Found]"
+        banner_update_status="Not Found"
+    fi
+}
 
-for ESP_DIR in "${ESP_DIRS[@]}"; do
-        if sudo test -d "$ESP_DIR"; then
-                REFIND_INSTALLED=true
-                THEME_DIR="$ESP_DIR/themes/rEFInd-Haruhi"
-                if sudo test -d "$THEME_DIR"; then
-                        echo -e "'rEFInd-Haruhi' theme is already installed. No further action is needed."
-                else
-                        echo -e "Copying the 'rEFInd-Haruhi' theme to $ESP_DIR/themes..."
-                        sudo mkdir -p "$ESP_DIR/themes"
-                        sudo cp -r "themes/rEFInd-Haruhi" "$ESP_DIR/themes/"
-                        echo -e "'rEFInd-Haruhi' has been successfully installed to your ESP."
-                fi
-        fi
+# Function to detect preconfigured refind.conf
+detect_refind_conf() {
+    if sudo test -f "$ESP_location/refind/refind.conf.original_backupbyscript"; then
+        echo "Preconfigured refind.conf? [Installed]"
+        refind_conf_status="Installed"
+    else
+        echo "Preconfigured refind.conf? [Not Installed]"
+        refind_conf_status="Not Installed"
+    fi
+}
+
+# Function to detect rEFInd-Haruhi theme
+detect_theme() {
+    if sudo test -d "$ESP_location/refind/themes/rEFInd-Haruhi"; then
+        echo "rEFInd-Haruhi: [Installed]"
+        theme_status="Installed"
+    else
+        echo "rEFInd-Haruhi: [Not Installed]"
+        theme_status="Not Installed"
+    fi
+}
+
+# Function to detect Secure-Boot status
+detect_secure_boot() {
+    sb_status=$(mokutil --sb-state 2>/dev/null)
+    if [[ "$sb_status" == *"enabled"* ]]; then
+        echo "Secure-Boot: [Enabled]"
+        secure_boot_status="Enabled"
+    elif [[ "$sb_status" == *"disabled"* ]]; then
+        echo "Secure-Boot: [Disabled]"
+        secure_boot_status="Disabled"
+    else
+        echo "Secure-Boot: [UNKNOWN]"
+        secure_boot_status="UNKNOWN"
+    fi
+}
+
+# Display the installation status
+detect_refind
+detect_banner_update
+detect_refind_conf
+detect_theme
+detect_secure_boot
+
+# Menu system
+while true; do
+    echo ""
+    echo "Select an option:"
+    echo "a. Automatically install all components"
+    echo "b. Background List (by listing themes/rEFInd-Haruhi/Background)"
+    echo "c. Current Installed rEFInd theme"
+    echo "d. Delete Haruhi theme from your rEFInd theme directory"
+    echo "e. Edit installation components"
+    echo "f. Rollback to default configuration"
+    echo "g. Install the selected components"
+    echo "q. Exit the program"
+    read -p "Enter your choice: " choice
+
+    case $choice in
+        a)
+            echo "Automatically installing all components..."
+            # Add installation commands for rEFInd, banner, conf, theme, etc.
+            ;;
+        b)
+            echo "Listing backgrounds..."
+            ls "$ESP_location/refind/themes/rEFInd-Haruhi/Background"
+            ;;
+        c)
+            echo "Checking current installed rEFInd theme..."
+            ls "$ESP_location/refind/themes/"
+            ;;
+        d)
+            echo "Deleting Haruhi theme..."
+            sudo rm -rf "$ESP_location/refind/themes/rEFInd-Haruhi"
+            ;;
+        e)
+            echo "Edit installation components"
+            echo "1. rEFInd installation: $refind_status"
+            echo "2. refind_banner_update.sh installation: $banner_update_status"
+            echo "3. Preconfigured refind.conf: $refind_conf_status"
+            echo "4. rEFInd-Haruhi theme: $theme_status"
+            echo "5. Secure Boot: $secure_boot_status"
+            read -p "Select a number to edit (1-5): " edit_choice
+            # Add logic to modify the selected component status
+            ;;
+        f)
+            echo "Rolling back to default configuration..."
+            sudo mv "$ESP_location/refind/refind.conf" "$ESP_location/refind/refind.conf.haruhi"
+            sudo mv "$ESP_location/refind/refind.conf.original_backupbyscript" "$ESP_location/refind/refind.conf"
+            ;;
+        g)
+            echo "Installing selected components..."
+            # Add installation commands for selected components
+            ;;
+        q)
+            echo "Exiting the program."
+            exit 0
+            ;;
+        *)
+            echo "Invalid option. Please try again."
+            ;;
+    esac
 done
-
-# If rEFInd is not installed, prompt the user to install it
-if [ "$REFIND_INSTALLED" = false ]; then
-        echo -e "ERROR: rEFInd is not installed on your system."
-        read -p "Would you like to install rEFInd now? (YES/NO) " install_refind
-
-        case "$install_refind" in
-                YES ) echo -e "Proceeding with rEFInd installation...\n";
-                      sudo apt install refind;  # For Debian/Ubuntu-based systems
-                      ;;
-                NO )  echo -e "Please install rEFInd manually before running this script again. Exiting...";
-                      exit 1;;
-                * )   echo -e "Invalid response. Please enter YES or NO."; exit 1;;
-        esac
-fi
-
-# Prompt to install the preconfigured refind.conf
-echo -e "We have a preconfigured rEFInd configuration file."
-echo -e "Would you like to install it to your ESP/rEFInd/refind.conf?"
-read -p "Do you want to proceed? (YES/NO) " YN
-
-case "$YN" in
-        YES ) echo -e "Proceeding with refind.conf installation...\n";;
-        NO ) echo -e "Installation of refind.conf skipped. Thank you for using this script. Exiting..."; exit;;
-        * ) echo -e "Invalid response. Please enter YES or NO."; exit 1;;
-esac
-
-# Backup and install refind.conf
-REFIND_CONF="$ESP_DIR/refind/refind.conf"
-if sudo test -f "$REFIND_CONF"; then
-        echo -e "Backing up the existing refind.conf to refind.conf.original_backupbyscript..."
-        sudo cp "$REFIND_CONF" "${REFIND_CONF}.original_backupbyscript"
-fi
-sudo cp "refind.conf" "$REFIND_CONF"
-echo -e "Preconfigured refind.conf has been successfully copied to $REFIND_CONF."
