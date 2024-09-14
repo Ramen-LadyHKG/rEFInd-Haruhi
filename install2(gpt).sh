@@ -34,8 +34,9 @@ fi
 
 # Create refind_banner_update directory and copy the script
 if [ ! -d "$HOME/scripts/refind_banner_update" ]; then
-        echo -e "Copying 'refind_banner_update' to $HOME/scripts..."
-        cp -r "refind_banner_update" "$HOME/scripts/refind_banner_update"
+        echo -e "Copying 'refind_banner_update.sh' to $HOME/scripts/refind_banner_update..."
+        mkdir "$HOME/scripts/refind_banner_update/"
+        cp "refind_banner_update.sh" "$HOME/scripts/refind_banner_update/refind_banner_update.sh"
 else
         echo -e "'refind_banner_update' is already installed. Exiting the program..."
         exit 1
