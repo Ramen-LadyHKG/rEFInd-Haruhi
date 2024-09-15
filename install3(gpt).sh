@@ -1,146 +1,250 @@
 #!/bin/bash
 
-# Function to detect ESP mount point
-detect_esp() {
-    if sudo test -d "/boot/efi/EFI/refind"; then
-        ESP_location="/boot/efi/EFI"
-    elif sudo test -d "/boot/EFI/refind"; then
-        ESP_location="/boot/EFI"
-    else
-        echo "ESP not found. Please ensure your EFI partition is mounted."
-        exit 1
-    fi
+# Function to check the status of installed components
+check_status() {
+	# Check rEFInd installation
+	if sudo test -d "/boot/efi/EFI/refind" || sudo test -d "/boot/EFI/refind"; then
+		refind_status="Installed"
+	else
+		refind_status="Not Installed"
+	fi
+
+	# Check refind_banner_update.sh installation
+	if [ -f "$HOME/scripts/refind_banner_update/refind_banner_update.sh" ]; then
+		banner_status="Installed"
+	else
+		banner_status="Not Installed"
+	fi
+
+	# Check preconfigured refind.conf installation
+	if sudo test -f "/boot/efi/EFI/refind/refind.conf.original_backupbyscript"; then
+		conf_status="Installed"
+	else
+		conf_status="Not Installed"
+	fi
+
+	# Check rEFInd-Haruhi theme installation
+	if sudo test -d "/boot/efi/EFI/refind/themes/rEFInd-Haruhi" || sudo test -d "/boot/EFI/refind/themes/rEFInd-Haruhi"; then
+		theme_status="Installed"
+	else
+		theme_status="Not Installed"
+	fi
+
+	# Check Secure Boot status
+	sb_status=$(mokutil --sb-state 2>/dev/null | grep -q "SecureBoot enabled" && echo "Enabled" || echo "Disabled")
+
+	# Check Distro
+	distro=$(cat /etc/os-release | grep "^NAME=" | cut -d'=' -f2 | tr -d '"')
+	supported_distros=("Fedora" "Ubuntu" "Debian" "Arch")
+	if [[ " ${supported_distros[@]} " =~ " ${distro} " ]]; then
+		distro_status="Supported [$distro]"
+	else
+		distro_status="Not Supported"
+	fi
 }
 
-# Detect ESP location at the beginning
-detect_esp
-
-# Display welcome message and installation status
-echo "====== Welcome to rEFInd-Haruhi Install script ======"
-echo ""
-
-# Function to detect rEFInd installation status
-detect_refind() {
-    if sudo test -d "$ESP_location/refind"; then
-        echo "rEFInd install [status: Installed]"
-        refind_status="Installed"
-    else
-        echo "rEFInd install [status: Not Installed]"
-        refind_status="Not Installed"
-    fi
+# Function to display status
+display_status() {
+	echo "====== Welcome to rEFInd-Haruhi Install script ======"
+	echo "Installation Status:"
+	echo "1. rEFInd Boot Manager: $refind_status"
+	echo "2. refind_banner_update.sh: $banner_status"
+	echo "3. Preconfigured refind.conf: $conf_status"
+	echo "4. rEFInd-Haruhi theme: $theme_status"
+	echo "5. Secure-Boot: $sb_status"
+	echo "Distro: $distro_status"
+	echo
 }
 
-# Function to detect refind_banner_update.sh installation status
-detect_banner_update() {
-    if test -f "$HOME/scripts/refind_banner_update/refind_banner_update.sh"; then
-        echo "refind_banner_update.sh install [status: Installed] ($HOME/scripts/refind_banner_update/refind_banner_update.sh)"
-        banner_update_status="Installed"
-    else
-        echo "refind_banner_update.sh install [status: Not Found]"
-        banner_update_status="Not Found"
-    fi
+# Function for the main menu
+main_menu() {
+	while true; do
+		display_status
+		echo "Please select an option:"
+		echo "a. Automatically install all components"
+		echo "b. Background List"
+		echo "c. Current Installed rEFInd theme"
+		echo "d. Delete Haruhi theme from your rEFInd theme directory"
+		echo "e. Edit (1,2,3,4,5)"
+		echo "f. Rollback to default configuration"
+		echo "g. Install selected components"
+		echo "q. Exit"
+		read -p "Enter your choice: " choice
+
+		case $choice in
+			a) install_all_components ;;
+			b) list_backgrounds ;;
+			c) current_theme ;;
+			d) delete_haruhi_theme ;;
+			e) edit_menu ;;
+			f) rollback_config ;;
+			g) install_selected_components ;;
+			q) exit 0 ;;
+			*) echo "Invalid choice, please try again." ;;
+		esac
+	done
 }
 
-# Function to detect preconfigured refind.conf
-detect_refind_conf() {
-    if sudo test -f "$ESP_location/refind/refind.conf.original_backupbyscript"; then
-        echo "Preconfigured refind.conf? [Installed]"
-        refind_conf_status="Installed"
-    else
-        echo "Preconfigured refind.conf? [Not Installed]"
-        refind_conf_status="Not Installed"
-    fi
+# Function to install all components
+install_all_components() {
+	echo "Starting automatic installation of all components..."
+	install_refind
+	install_refind_banner_update
+	install_preconfigured_conf
+	install_haruhi_theme
+	install_secure_boot
+	echo "Installation complete!"
 }
 
-# Function to detect rEFInd-Haruhi theme
-detect_theme() {
-    if sudo test -d "$ESP_location/refind/themes/rEFInd-Haruhi"; then
-        echo "rEFInd-Haruhi: [Installed]"
-        theme_status="Installed"
-    else
-        echo "rEFInd-Haruhi: [Not Installed]"
-        theme_status="Not Installed"
-    fi
+# Function to install rEFInd
+install_refind() {
+	if [ "$refind_status" == "Installed" ]; then
+		echo "rEFInd is already installed."
+	else
+		echo "Installing rEFInd..."
+		# Installation steps for rEFInd based on distro and secure boot settings
+		sudo dnf install refind -y || sudo apt install refind -y
+	fi
 }
 
-# Function to detect Secure-Boot status
-detect_secure_boot() {
-    sb_status=$(mokutil --sb-state 2>/dev/null)
-    if [[ "$sb_status" == *"enabled"* ]]; then
-        echo "Secure-Boot: [Enabled]"
-        secure_boot_status="Enabled"
-    elif [[ "$sb_status" == *"disabled"* ]]; then
-        echo "Secure-Boot: [Disabled]"
-        secure_boot_status="Disabled"
-    else
-        echo "Secure-Boot: [UNKNOWN]"
-        secure_boot_status="UNKNOWN"
-    fi
+# Function to install refind_banner_update.sh
+install_refind_banner_update() {
+	if [ "$banner_status" == "Installed" ]; then
+		echo "refind_banner_update.sh is already installed."
+	else
+		echo "Installing refind_banner_update.sh..."
+		mkdir -p "$HOME/scripts/refind_banner_update"
+		cp "refind_banner_update.sh" "$HOME/scripts/refind_banner_update/"
+	fi
 }
 
-# Display the installation status
-detect_refind
-detect_banner_update
-detect_refind_conf
-detect_theme
-detect_secure_boot
+# Function to install preconfigured refind.conf
+install_preconfigured_conf() {
+	if [ "$conf_status" == "Installed" ]; then
+		echo "Preconfigured refind.conf is already installed."
+	else
+		echo "Installing preconfigured refind.conf..."
+		sudo cp refind.conf /boot/efi/EFI/refind/refind.conf
+	fi
+}
 
-# Menu system
-while true; do
-    echo ""
-    echo "Select an option:"
-    echo "a. Automatically install all components"
-    echo "b. Background List (by listing themes/rEFInd-Haruhi/Background)"
-    echo "c. Current Installed rEFInd theme"
-    echo "d. Delete Haruhi theme from your rEFInd theme directory"
-    echo "e. Edit installation components"
-    echo "f. Rollback to default configuration"
-    echo "g. Install the selected components"
-    echo "q. Exit the program"
-    read -p "Enter your choice: " choice
+# Function to install rEFInd-Haruhi theme
+install_haruhi_theme() {
+	if [ "$theme_status" == "Installed" ]; then
+		echo "rEFInd-Haruhi theme is already installed."
+	else
+		echo "Installing rEFInd-Haruhi theme..."
+		sudo cp -r "themes/rEFInd-Haruhi" "/boot/efi/EFI/refind/themes/"
+	fi
+}
 
-    case $choice in
-        a)
-            echo "Automatically installing all components..."
-            # Add installation commands for rEFInd, banner, conf, theme, etc.
-            ;;
-        b)
-            echo "Listing backgrounds..."
-            ls "$ESP_location/refind/themes/rEFInd-Haruhi/Background"
-            ;;
-        c)
-            echo "Checking current installed rEFInd theme..."
-            ls "$ESP_location/refind/themes/"
-            ;;
-        d)
-            echo "Deleting Haruhi theme..."
-            sudo rm -rf "$ESP_location/refind/themes/rEFInd-Haruhi"
-            ;;
-        e)
-            echo "Edit installation components"
-            echo "1. rEFInd installation: $refind_status"
-            echo "2. refind_banner_update.sh installation: $banner_update_status"
-            echo "3. Preconfigured refind.conf: $refind_conf_status"
-            echo "4. rEFInd-Haruhi theme: $theme_status"
-            echo "5. Secure Boot: $secure_boot_status"
-            read -p "Select a number to edit (1-5): " edit_choice
-            # Add logic to modify the selected component status
-            ;;
-        f)
-            echo "Rolling back to default configuration..."
-            sudo mv "$ESP_location/refind/refind.conf" "$ESP_location/refind/refind.conf.haruhi"
-            sudo mv "$ESP_location/refind/refind.conf.original_backupbyscript" "$ESP_location/refind/refind.conf"
-            ;;
-        g)
-            echo "Installing selected components..."
-            # Add installation commands for selected components
-            ;;
-        q)
-            echo "Exiting the program."
-            exit 0
-            ;;
-        *)
-            echo "Invalid option. Please try again."
-            ;;
-    esac
-done
+# Function to install Secure Boot (stubbed for now)
+install_secure_boot() {
+	echo "Secure Boot installation steps go here..."
+}
+
+# Function to list backgrounds
+list_backgrounds() {
+	echo "Listing backgrounds..."
+	ls Background/ || sudo ls /boot/efi/EFI/refind/themes/rEFInd-Haruhi/Background
+}
+
+# Function to display current theme
+current_theme() {
+	echo "Current Installed rEFInd theme..."
+	sudo ls /boot/efi/EFI/refind/themes/
+}
+
+# Function to delete Haruhi theme
+delete_haruhi_theme() {
+	echo "Deleting rEFInd-Haruhi theme..."
+	sudo rm -rf "/boot/efi/EFI/refind/themes/rEFInd-Haruhi"
+	echo "Haruhi theme deleted."
+}
+
+# Function to rollback configuration
+rollback_config() {
+	echo "Rolling back to default configuration..."
+	sudo mv /boot/efi/EFI/refind/refind.conf.haruhi /boot/efi/EFI/refind/refind.conf
+}
+
+# Function for edit menu
+edit_menu() {
+	while true; do
+		echo "Toggle (1-5) which component to install:"
+		echo "1. rEFInd Boot Manager [$refind_status]"
+		echo "2. refind_banner_update.sh [$banner_status]"
+		echo "3. Preconfigured refind.conf [$conf_status]"
+		echo "4. rEFInd-Haruhi [$theme_status]"
+		echo "5. Secure-Boot [$sb_status]"
+		echo "x. Begin installation with options above"
+		echo "b. Back to main menu"
+		read -p "Enter your choice: " edit_choice
+
+		case $edit_choice in
+			1) toggle_refind ;;
+			2) toggle_banner_update ;;
+			3) toggle_conf ;;
+			4) toggle_haruhi_theme ;;
+			5) toggle_secure_boot ;;
+			x) install_selected_components; break ;;
+			b) break ;;
+			*) echo "Invalid choice, please try again." ;;
+		esac
+	done
+}
+
+# Function to install selected components
+install_selected_components() {
+	install_refind
+	install_refind_banner_update
+	install_preconfigured_conf
+	install_haruhi_theme
+	install_secure_boot
+	echo "Installation complete!"
+}
+
+# Functions to toggle options
+toggle_refind() {
+	if [ "$refind_status" == "Installed" ]; then
+		refind_status="Not Installed"
+	else
+		refind_status="Installed"
+	fi
+}
+
+toggle_banner_update() {
+	if [ "$banner_status" == "Installed" ]; then
+		banner_status="Not Installed"
+	else
+		banner_status="Installed"
+	fi
+}
+
+toggle_conf() {
+	if [ "$conf_status" == "Installed" ]; then
+		conf_status="Not Installed"
+	else
+		conf_status="Installed"
+	fi
+}
+
+toggle_haruhi_theme() {
+	if [ "$theme_status" == "Installed" ]; then
+		theme_status="Not Installed"
+	else
+		theme_status="Installed"
+	fi
+}
+
+toggle_secure_boot() {
+	if [ "$sb_status" == "Enabled" ]; then
+		sb_status="Disabled"
+	else
+		sb_status="Enabled"
+	fi
+}
+
+# Main script logic
+check_status
+main_menu
