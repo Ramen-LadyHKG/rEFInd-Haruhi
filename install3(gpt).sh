@@ -82,6 +82,15 @@ main_menu() {
 			q) exit 0 ;;
 			*) echo "Invalid choice, please try again." ;;
 		esac
+		
+		# Add a clear separation line for output
+		echo
+		echo "====================================="
+		echo "Result of selected option:"
+		echo "====================================="
+		# The result of the selected option will be shown here
+		sleep 2  # Add a small delay to keep the result visible for a while
+		echo
 	done
 }
 
@@ -102,7 +111,6 @@ install_refind() {
 		echo "rEFInd is already installed."
 	else
 		echo "Installing rEFInd..."
-		# Installation steps for rEFInd based on distro and secure boot settings
 		sudo dnf install refind -y || sudo apt install refind -y
 	fi
 }
@@ -191,6 +199,14 @@ edit_menu() {
 			b) break ;;
 			*) echo "Invalid choice, please try again." ;;
 		esac
+		
+		# Add a separation line before returning to the main menu
+		echo
+		echo "====================================="
+		echo "Result of selected option:"
+		echo "====================================="
+		sleep 2
+		echo
 	done
 }
 
