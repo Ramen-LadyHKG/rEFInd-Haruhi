@@ -48,10 +48,11 @@ check_status() {
 	fi
 }
 
-
-
 # Function to display the main menu
 display_menu() {
+	# Update status before displaying the menu
+	check_status
+
 	echo "====== Welcome to rEFInd-Haruhi Install script ======"
 	echo "Installation Status:"
 	echo "1. rEFInd install: $refind_status"
@@ -72,15 +73,6 @@ display_menu() {
 	echo "----------------------------------------------------"
 }
 
-# Function to install rEFInd
-install_refind() {
-	if [ "$refind_status" == "Installed" ]; then
-		echo "rEFInd is already installed."
-	else
-		echo "Installing rEFInd..."
-		sudo dnf install refind -y || sudo apt install refind -y
-	fi
-}
 
 # Function to install refind_banner_update.sh
 install_refind_banner_update() {
@@ -120,8 +112,17 @@ install_secure_boot() {
 
 # Function to list backgrounds
 list_backgrounds() {
-	echo "Listing backgrounds..."
-	ls Background/ || sudo ls /boot/efi/EFI/refind/themes/rEFInd-Haruhi/Background
+	# List installed backgrounds if rEFInd-Haruhi theme is installed
+	if [ "$theme_status" = "Installed" ]; then
+		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:"
+		sudo ls -1 /boot/efi/EFI/refind/themes/rEFInd-Haruhi/Background || echo "No installed backgrounds found in ESP."
+		echo -e "==============\n"
+	fi
+
+	# List available backgrounds in the local directory
+	echo "Listing available Haruhi Backgrounds to install..."
+	ls -1 themes/rEFInd-Haruhi/Background || echo "No available backgrounds found in the current directory."
+	echo -e "==============\n"
 }
 
 # Function to display current theme
@@ -244,42 +245,26 @@ handle_choice() {
 	case "$1" in
 		a)
 			echo "Installing all components..."
-			# Add your installation logic here
+			install_all_components
 			;;
 		b)
-			# 檢查是否安裝了 rEFInd-Haruhi theme
-			if [ "$theme_status" = "Installed" ]; then
-				echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:"
-				# 列出安裝於ESP中的背景圖片
-				sudo ls -1 /boot/efi/EFI/refind/themes/rEFInd-Haruhi/Background || echo "No installed backgrounds found in ESP."
-				echo -e "==============\n" #分隔線
-			fi
-
-			# 列出可安裝的背景圖片
-			echo "Listing available Haruhi Backgrounds to install..."
-			ls -1 themes/rEFInd-Haruhi/Background || echo "No available backgrounds found in the current directory."
-			echo -e "==============\n" #分隔線
+			list_backgrounds
 			;;
 		c)
 			echo "Checking current installed rEFInd theme..."
-			# Check and list current rEFInd themes
 			sudo ls /boot/efi/EFI/refind/themes || echo "No themes found."
 			;;
 		d)
-			echo "Deleting Haruhi theme..."
-			# Add your deletion logic here
+			delete_haruhi_theme
 			;;
 		e)
-			echo "Entering edit mode..."
-			# Add logic to toggle options here
+			edit_menu
 			;;
 		f)
-			echo "Rolling back to default configuration..."
-			# Add your rollback logic here
+			rollback_config
 			;;
 		g)
-			echo "Installing selected components..."
-			# Add your installation logic here
+			install_selected_components
 			;;
 		q)
 			echo "Exiting the program."
@@ -293,7 +278,6 @@ handle_choice() {
 
 # Main loop
 while true; do
-	# Display menu
 	clear  # Clear screen to ensure fresh menu display
 	display_menu
 
