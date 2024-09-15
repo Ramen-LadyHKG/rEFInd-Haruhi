@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Function to check the status of installed components
+# Function to check the status of installed components
 check_status() {
 	# Check rEFInd installation
 	if sudo test -d "/boot/efi/EFI/refind" || sudo test -d "/boot/EFI/refind"; then
@@ -33,15 +34,21 @@ check_status() {
 	# Check Secure Boot status
 	sb_status=$(mokutil --sb-state 2>/dev/null | grep -q "SecureBoot enabled" && echo "Enabled" || echo "Disabled")
 
-	# Check Distro
-	distro=$(cat /etc/os-release | grep "^NAME=" | cut -d'=' -f2 | tr -d '"')
-	supported_distros=("Fedora" "Ubuntu" "Debian" "Arch")
-	if [[ " ${supported_distros[@]} " =~ " ${distro} " ]]; then
-		distro_status="Supported [$distro]"
+	# Check Distro using the 'ID' field and 'ID_LIKE' field from /etc/os-release
+	distro=$(grep "^ID=" /etc/os-release | cut -d'=' -f2 | tr -d '"')
+	distro_like=$(grep "^ID_LIKE=" /etc/os-release | cut -d'=' -f2 | tr -d '"')
+
+	# List of supported distros
+	supported_distros=("fedora" "ubuntu" "debian" "arch")
+	
+	# Check if distro or distro_like is supported
+	if [[ " ${supported_distros[@]} " =~ " ${distro} " ]] || [[ " ${supported_distros[@]} " =~ " ${distro_like} " ]]; then
+		distro_status="Supported [$(grep "^NAME=" /etc/os-release | cut -d'=' -f2 | tr -d '"')]"
 	else
-		distro_status="Not Supported"
+		distro_status="Not Supported [$(grep "^NAME=" /etc/os-release | cut -d'=' -f2 | tr -d '"')]"
 	fi
 }
+
 
 # Function to display status
 display_status() {
