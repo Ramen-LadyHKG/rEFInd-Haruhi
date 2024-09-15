@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo -e "Note that, the script will need root previlege"
+echo -e "Because files in ESP is only readable or editable by root."
+echo -e "Disclaimer: Please review that code before executing further."
+
 # Function to check the status of installed components
 check_status() {
 	# Check rEFInd installation
