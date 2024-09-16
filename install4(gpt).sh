@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Define the version of rEFInd going to install
+refind_version="0.14.2"
+
+
 echo -e "Note that, the script will need root previlege"
 echo -e "Because files in ESP is only readable or editable by root."
 echo -e "Disclaimer: Please review that code before executing further."
@@ -72,9 +76,9 @@ check_status() {
 	
 	# Check if distro or distro_like is supported
 	if [[ " ${supported_distros[@]} " =~ " ${distro} " ]] || [[ " ${supported_distros[@]} " =~ " ${distro_like} " ]]; then
-		distro_status="Supported [$(grep "^NAME=" /etc/os-release | cut -d'=' -f2 | tr -d '"')]"
+		distro_status="Supported [$(grep "^NAME=" /etc/os-release | cut -d'=' -f2 | tr -d '"')] ($distro_like)"
 	else
-		distro_status="Not Supported [$(grep "^NAME=" /etc/os-release | cut -d'=' -f2 | tr -d '"')]"
+		distro_status="Not Supported [$(grep "^NAME=" /etc/os-release | cut -d'=' -f2 | tr -d '"')] ($distro_like)"
 	fi
 }
 
@@ -125,12 +129,6 @@ else
 fi
 
 if [ "$theme_status" == "Installed" ]; then
-	refind_install = "NO"
-else
-	refind_install = "YES"
-fi
-
-if [ "$theme_status" == "Installed" ]; then
 	theme_install = "NO"
 else
 	theme_install = "YES"
@@ -139,18 +137,24 @@ fi
 if [ "$sb_status" == "Enabled" ]; then
 	sb_install = "YES"
 else
-	sb_install = "YES"
+	sb_install = "NO"
 fi
 
-# Function to install rEFInd without secure boot
-
-
-# Function to install Secure Boot
+# Function to install Secure Boot Component
 install_secure_boot() {
 	echo "Secure Boot installation steps go here..."
        	echo -e "\n----------------------------------------------------\n"
 }
 
+# Function to install rEFInd without secure boot
+install_refind() {
+
+
+wget https://sourceforge.net/projects/refind/files/$(refind_version)/refind-bin-gnuefi-$(refind_version).zip
+unzip -a refind-bin-gnuefi-$(refind_version).zip
+
+sudo cp 
+}
 # Function to install refind_banner_update.sh
 install_refind_banner_update() {
 	if [ "$update_script_status" == "Installed" ]; then
@@ -280,16 +284,15 @@ install_all_components() {
  	else
   		install_refind
     	fi
-
+     
+ 	install_refind_banner_update
 	if [ refind_status="Installed" ]; then
- 		install_refind_banner_update
    		install_preconfigured_conf
 		install_haruhi_theme
 	else
 		echo -e "ERROR: We cannot proceed if rEFInd isn't installed"
 	fi
 
-}
 	echo "Installation complete!"
         echo -e "\n----------------------------------------------------\n"
 }
@@ -327,7 +330,6 @@ install_selected_components() {
 		echo -e "ERROR: We cannot proceed if rEFInd isn't installed"
 	fi
 
-}
 	echo "Installation complete!"
         echo -e "\n----------------------------------------------------\n"
 }
