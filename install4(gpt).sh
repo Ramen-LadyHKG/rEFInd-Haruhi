@@ -141,8 +141,15 @@ else
 fi
 
 # Function to install Secure Boot Component
-install_secure_boot() {
+install_secure_boot_component() {
 	echo "Secure Boot installation steps go here..."
+
+ 	if [ "$distro_like" == "debian" ]; then
+  		sudo apt install sbsigntool openssl mokutil
+    	elif [ "$distro_like" == "fedora" ]; then
+     		sudo  apt install
+	
+  	
        	echo -e "\n----------------------------------------------------\n"
 }
 
