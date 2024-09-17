@@ -72,7 +72,7 @@ check_status() {
 	distro_like=$(grep "^ID_LIKE=" /etc/os-release | cut -d'=' -f2 | tr -d '"')
 
 	# List of supported distros
-	supported_distros=("fedora" "ubuntu" "debian" "arch")
+	supported_distros=("fedora" "ubuntu" "debian" "arch" "suse")
 	
 	# Check if distro or distro_like is supported
 	if [[ " ${supported_distros[@]} " =~ " ${distro} " ]] || [[ " ${supported_distros[@]} " =~ " ${distro_like} " ]]; then
@@ -142,13 +142,21 @@ fi
 
 # Function to install Secure Boot Component
 install_secure_boot_component() {
-	echo "Secure Boot installation steps go here..."
+	echo -e "Secure Boot Components {openssl mokutil sbsigntools} installing..."
 
- 	if [ "$distro_like" == "debian" ]; then
-  		sudo apt install sbsigntool openssl mokutil
-    	elif [ "$distro_like" == "fedora" ]; then
-     		sudo  apt install
-	
+ 	if [ "$distro_like" =~ "debian" ]; then
+  		sudo apt install openssl mokutil sbsigntool
+    	elif [ "$distro_like" =~ "fedora" ]; then
+     		sudo dnf install openssl mokutil sbsigntools 
+    	elif [ "$distro_like" =~ "suse" ]; then
+		sudo zypper install openssl mokutil sbsigntools
+  	elif [ "$distro_like" =~ "arch" ]; then
+   		sudo pacman -S openssl mokutil sbsigntools
+     	else
+      		echo -e "ERROR: We cannot install Secure Boot Component on your distro, skipping..."
+		return 1
+  	fi
+   	echo -e "Install secure boot components successfully on ($distro_like), proceed... "
   	
        	echo -e "\n----------------------------------------------------\n"
 }
@@ -156,11 +164,40 @@ install_secure_boot_component() {
 # Function to install rEFInd without secure boot
 install_refind() {
 
+if sudo test -d "$ESP_location/refind" ; then
+	echo -e "rEFInd is already installed on your system, skipping..."
+else
+ 	wget https://sourceforge.net/projects/refind/files/$(refind_version)/refind-bin-gnuefi-$(refind_version).zip
+	unzip -a refind-bin-gnuefi-$(refind_version).zip
+	sudo ./refind-bin-$(refind_version)/refind-install
+	sudo cp -rf refind-bin-$(refind_version)/fonts/ $ESP_location/refind
 
-wget https://sourceforge.net/projects/refind/files/$(refind_version)/refind-bin-gnuefi-$(refind_version).zip
-unzip -a refind-bin-gnuefi-$(refind_version).zip
+	if sudo test -d "$ESP_location/refind" ; then
+		echo -e "rEFInd has successfully installed on your system, proceed..."
+	else
+ 		echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
+   		exit 1
+     	fi
+fi
 
-sudo cp 
+# Function to install rEFInd with secure boot
+install_refind_sb() {
+
+if sudo test -f "$ESP_location/refind/shimx64.efi" ; then
+	echo -e "(rEFInd with Secure Boot) is already installed on your system, skipping..."
+else
+ 	wget https://sourceforge.net/projects/refind/files/$(refind_version)/refind-bin-gnuefi-$(refind_version).zip
+	unzip -a refind-bin-gnuefi-$(refind_version).zip
+	sudo ./refind-bin-$(refind_version)/refind-install --local
+	sudo cp -rf refind-bin-$(refind_version)/fonts/ $ESP_location/refind
+
+	if sudo test -d "$ESP_location/refind" ; then
+		echo -e "rEFInd has successfully installed on your system, proceed..."
+	else
+ 		echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
+   		exit 1
+     	
+
 }
 # Function to install refind_banner_update.sh
 install_refind_banner_update() {
