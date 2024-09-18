@@ -194,6 +194,7 @@ else
    		exit 1
      	fi
 fi
+}
 
 # Function to install rEFInd with secure boot
 install_refind_sb() {
