@@ -491,20 +491,18 @@ install_all_components() {
 
 # Function to install selected components
 install_selected_components() {
-    echo "" # Skip 1 line to print
+	echo "" # Skip 1 line to print
 
 	if [[ "$refind_install" == "YES" ]]; then
- 		if [ "sb_install" == "YES" ]; then
+		if [ "sb_install" == "YES" ]; then
 			install_refind_sb
-   		else
-            install_refind
+		else
+			install_refind
 		fi
 	fi
  
 	if [[ "$update_script_install" == "YES" ]]; then
-		echo -e "(refind_banner_update.sh) is already installed, skipping..."
-	else
-  		install_refind_banner_update
+		install_refind_banner_update
 	fi
 
 	if [[ refind_status == "Installed" ]]; then
@@ -515,8 +513,6 @@ install_selected_components() {
 		fi
 
 		if [[ "$theme_install" == "YES" ]]; then
-			theme_install="NO"
-		else
 			install_haruhi_theme
 		fi
 	else
@@ -524,7 +520,7 @@ install_selected_components() {
 	fi
 
 	echo -e "Installation complete!"
-        echo -e "\n----------------------------------------------------\n"
+	echo -e "\n----------------------------------------------------\n"
 }
 
 # ========= Menu Begins here =========
