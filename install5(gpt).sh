@@ -4,6 +4,16 @@
 refind_version="0.14.2"
 shim_version="15.8+ubuntu+1.58"
 
+# Get the base name of the current working directory
+current_dir_name=$(basename "$(pwd)")
+
+# Check if the current working directory is exactly rEFInd-Haruhi
+if [[ "$current_dir_name" != "rEFInd-Haruhi" ]]; then
+    echo "Error: You must run this script from inside the rEFInd-Haruhi directory."
+    echo "Please cd to rEFInd-Haruhi/ before running the script."
+    exit 1
+fi
+
 echo -e "----------------------------------------------------\n"
 echo -e "Make sure you have Network Connection and DO NOT RUN as ROOT\n"
 echo -e "Note that, the script will need root privilege"
@@ -11,8 +21,8 @@ echo -e "Because files in ESP are only readable or editable by root."
 echo -e "Disclaimer: Please review this code before executing further."
 echo -e "----------------------------------------------------\n"
 
-echo -e "Press Enter to return to the menu..."
-read
+# Wait for user confirmation before proceeding
+read -p "Press Enter to proceed and clear the screen..."
 
 clear
 
@@ -28,6 +38,7 @@ check_status() {
 	 	echo -e "Exiting the program due to Error (ESP not found)"
    		exit 1
    	fi
+
 	# Check rEFInd installation
 	if sudo test -d "$ESP_location/refind" ; then
 		refind_status="Installed"
@@ -48,9 +59,9 @@ check_status() {
 
 	# Check preconfigured refind.conf installation
 	if sudo test -f "$ESP_location/refind/refind.conf.original_backupbyscript"; then
-		conf_status="Installed"
+		preconf_status="Installed"
 	else
-		conf_status="Not Installed"
+		preconf_status="Not Installed"
 	fi
 
 	# Check rEFInd-Haruhi theme installation
@@ -59,13 +70,13 @@ check_status() {
 	else
 		theme_status="Not Installed"
 	fi
-	preconf_install="YES"
+
 	# Check Secure Boot status
 	command -v mokutil >/dev/null 2>&1
 	if [ $? -eq 0 ]; then
 		sb_status=$(mokutil --sb-state 2>/dev/null | grep -q "SecureBoot enabled" && echo "Enabled" || echo "Disabled")
 	else
-		sb_status="Mokutil Not Installed, Marked as Disabled"
+		sb_status="Secure Boot check skipped (mokutil not installed), marking as Disabled"
 	fi
 
 	# Check Distro using the 'ID' field and 'ID_LIKE' field from /etc/os-release
@@ -88,12 +99,12 @@ display_menu() {
 	# Update status before displaying the menu
 	check_status
 	
- 	echo -e ""
+	echo -e ""
 	echo -e "====== Welcome to rEFInd-Haruhi Install script ======"
 	echo -e "Installation Status:"
 	echo -e "1. rEFInd install: $refind_status ($refind_location)"
 	echo -e "2. refind_banner_update.sh install: $update_script_status ($update_script_location)"
-	echo -e "3. Preconfigured refind.conf: ($conf_status)"
+	echo -e "3. Preconfigured refind.conf: ($preconf_status)"
 	echo -e "4. rEFInd-Haruhi: $theme_status"
 	echo -e "5. Secure Boot: $sb_status"
 	echo -e "6. Distro: $distro_status"
@@ -104,14 +115,14 @@ display_menu() {
 	echo -e "d. Delete Haruhi theme"
 	echo -e "e. Edit & Install selected components"
 	echo -e "f. Fallback configuration"
- 	echo -e "g. Gather the absolute path of Background list"
+	echo -e "g. Gather the absolute path of Background list"
 	echo -e "q. Exit the program"
 	echo -e "----------------------------------------------------\n"
 }
 
 # ========= Actions Begins here =========
 
-# Define Default Install State
+# Default installation checks based on the current status
 if [ "$refind_status" == "Installed" ]; then
 	refind_install="NO"
 else
@@ -124,19 +135,19 @@ else
 	update_script_install="YES"
 fi
 
-if [[ "$conf_status" == "Installed" ]]; then
-	conf_install="NO"
+if [ "$preconf_status" == "Installed" ]; then
+	preconf_install="NO"
 else
-	conf_install="YES"
+	preconf_install="YES"
 fi
 
-if [[ "$theme_status" == "Installed" ]]; then
+if [ "$theme_status" == "Installed" ]; then
 	theme_install="NO"
 else
 	theme_install="YES"
 fi
 
-if [[ "$sb_status" == "Enabled" ]]; then
+if [ "$sb_status" == "Enabled" ]; then
 	sb_install="YES"
 else
 	sb_install="NO"
@@ -144,27 +155,31 @@ fi
 
 # Function to install Secure Boot Component
 install_secure_boot_component() {
-	echo -e "" #Skip 1 line to print
-	echo -e "Secure Boot Components {openssl mokutil sbsigntools} installing..."
-
- 	if [[ "$distro_like" =~ "debian" ]]; then
-  		sudo apt install openssl mokutil sbsigntool
-    	elif [[ "$distro_like" =~ "fedora" ]]; then
-     		sudo dnf install openssl mokutil sbsigntools 
-    	elif [[ "$distro_like" =~ "suse" ]]; then
-		sudo zypper install openssl mokutil sbsigntools
-  	elif [[ "$distro_like" =~ "arch" ]]; then
-   		sudo pacman -S openssl mokutil sbsigntools
-     	else
-      		echo -e "ERROR: We cannot install Secure Boot Component on your distro, skipping..."
+	echo -e "" # Skip 1 line to print
+	echo -e "Secure Boot Components { openssl mokutil sbsigntools bsdtar } installing..."
+	
+	if [[ "$distro_like" =~ "debian" ]]; then
+		sudo apt install openssl mokutil sbsigntool bsdtar
+	elif [[ "$distro_like" =~ "fedora" ]]; then
+		sudo dnf install openssl mokutil sbsigntools bsdtar
+	elif [[ "$distro_like" =~ "suse" ]]; then
+		sudo zypper install openssl mokutil sbsigntools bsdtar
+	elif [[ "$distro_like" =~ "arch" ]]; then
+		sudo pacman -S openssl mokutil sbsigntools libarchive
+	else
+		echo -e "ERROR: We cannot install Secure Boot Component on your distro, skipping..."
 		echo -e "Press Enter to return to the menu..."
 		read
-  		return 1
-  	fi
+		return 1
+	fi
+   	# Downloading shim signed package and extracting necessary components
    	mkdir shim-signed && cd shim-signed
-   	wget "http://archive.ubuntu.com/ubuntu/pool/main/s/shim-signed/shim-signed_${shim_version##*+ubuntu+}+${shim_version%%+ubuntu*}-0ubuntu1_amd64.deb"
-	bsdtar -vxOf "shim-signed_1.58+15.8-0ubuntu1_amd64.deb" data.tar.xz | bsdtar -vx usr/share/doc/shim-signed/copyright
- 	bsdtar -vxOf "shim-signed_1.58+15.8-0ubuntu1_amd64.deb" data.tar.xz | bsdtar -vx usr/lib/shim/
+   	wget "http://archive.ubuntu.com/ubuntu/pool/main/s/shim-signed/shim-signed_${shim_version##*+ubuntu+}+${shim_version%%+ubuntu*}-0ubuntu1_amd64.deb" || {
+    echo "Failed to download shim-signed package."
+    return 1
+    }
+    bsdtar -vxOf "shim-signed_${shim_version##*+ubuntu+}+${shim_version%%+ubuntu*}-0ubuntu1_amd64.deb" data.tar.xz | bsdtar -vx usr/share/doc/shim-signed/copyright
+ 	bsdtar -vxOf "shim-signed_${shim_version##*+ubuntu+}+${shim_version%%+ubuntu*}-0ubuntu1_amd64.deb" data.tar.xz | bsdtar -vx usr/lib/shim/
   	cp -v "usr/share/doc/shim-signed/copyright" "LICENSE"
    	cp -v "usr/lib/shim/shimx64.efi.signed.latest" "shimx64.efi"
     	cp -v "usr/lib/shim/"{mm,fb}x64".efi" "."
@@ -173,13 +188,35 @@ install_secure_boot_component() {
   	
        	echo -e "\n----------------------------------------------------\n"
 	
-	echo -e "Press Enter to proceed..."
-	read
+    read -p "Press Enter to proceed..."
 }
 
 # Function to install rEFInd without secure boot
 install_refind() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
+
+	if nc -zw1 github.com 443; then
+        echo -e "Internet is working\n"
+    else
+        echo -e "ERROR: We cannot connect to github.com"
+        return 1
+    fi
+
+    echo -e "Essential Tools { wget unzip } installing..."
+	
+	if [[ "$distro_like" =~ "debian" ]]; then
+		sudo apt install wget unzip
+	elif [[ "$distro_like" =~ "fedora" ]]; then
+		sudo dnf install wget unzip
+	elif [[ "$distro_like" =~ "suse" ]]; then
+		sudo zypper install wget unzip
+    elif [[ "$distro_like" =~ "arch" ]]; then
+        sudo pacman -S wget unzip
+    else
+        echo -e "ERROR: We cannot install Secure Boot Component on your distro, skipping..."
+        read -p "Press Enter to return to the menu..."
+        return 1
+    fi
 
 	if sudo test -d "$ESP_location/refind" ; then
 		echo ""
@@ -187,20 +224,22 @@ install_refind() {
 	else
 	 	echo -e "Downloading and Extract rEFInd installation ..."
  		wget https://sourceforge.net/projects/refind/files/${refind_version}/refind-bin-gnuefi-${refind_version}.zip
-		unzip -a refind-bin-gnuefi-$(refind_version).zip
+		unzip -a refind-bin-gnuefi-"${refind_version}".zip || {
+        echo "Failed to unzip rEFInd package."
+        return 1
+        }
  
   		echo -e "Installing (rEFInd without Secure Boot) ..."
-		sudo ./refind-bin-$(refind_version)/refind-install
-		sudo cp -rf refind-bin-$(refind_version)/fonts/ $ESP_location/refind
+        sudo ./refind-bin-"${refind_version}"/refind-install
+        sudo cp -rf refind-bin-"${refind_version}"/fonts/ $ESP_location/refind
+
 
 		if sudo test -d "$ESP_location/refind" ; then
 			echo -e "rEFInd has successfully installed on your system, proceed..."
-  			echo -e "Press Enter to proceed..."
-			read
+  			read -p "Press Enter to proceed..."
 		else
  			echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
-   			echo -e "Press Enter to return to the menu..."
-			read
+   			read -p "Press Enter to return to the menu..."
      			return 1
   	   	fi
 	fi
@@ -208,15 +247,42 @@ install_refind() {
 
 # Function to install rEFInd with secure boot
 install_refind_sb() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
 
+	if nc -zw1 github.com 443; then
+        echo -e "Internet is working\n"
+    else
+        echo -e "ERROR: We cannot connect to github.com"
+        return 1
+    fi
+
+    echo -e "Essential Tools { wget unzip } installing..."
+	
+	if [[ "$distro_like" =~ "debian" ]]; then
+		sudo apt install wget unzip
+	elif [[ "$distro_like" =~ "fedora" ]]; then
+		sudo dnf install wget unzip
+	elif [[ "$distro_like" =~ "suse" ]]; then
+		sudo zypper install wget unzip
+    elif [[ "$distro_like" =~ "arch" ]]; then
+        sudo pacman -S wget unzip
+    else
+        echo -e "ERROR: We cannot install Secure Boot Component on your distro, skipping..."
+        read -p "Press Enter to return to the menu..."
+        return 1
+    fi
+
+	
 	if sudo test -f "$ESP_location/refind/shimx64.efi" ; then
 		echo -e "(rEFInd with Secure Boot) is already installed on your system, skipping..."
 	else
  		echo -e "Downloading and Extract rEFInd installation ..."
- 	 	wget https://sourceforge.net/projects/refind/files/$(refind_version)/refind-bin-gnuefi-$(refind_version).zip
-		unzip -a refind-bin-gnuefi-$(refind_version).zip
-
+ 		wget https://sourceforge.net/projects/refind/files/${refind_version}/refind-bin-gnuefi-${refind_version}.zip
+		unzip -a refind-bin-gnuefi-"${refind_version}".zip || {
+        echo "Failed to unzip rEFInd package."
+        return 1
+        }
+        
  		echo -e "Installing (rEFInd with Secure Boot) ..."
 
  		install_secure_boot_component
@@ -228,26 +294,23 @@ install_refind_sb() {
 
 		if sudo test -d "$ESP_location/refind" ; then
 			echo -e "rEFInd with Secure Boot has successfully installed on your system, proceed..."
-			echo -e "Press Enter to proceed..."
-			read
+            read -p "Press Enter to proceed..."
 		else
  			echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
-   			echo -e "Press Enter to return to the menu..."
-			read
-     			exit 1
-     		fi
+            read -p "Press Enter to return to the menu..."
+            exit 1
+        fi
 	fi
 }
 
 # Function to install refind_banner_update.sh
 install_refind_banner_update() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
 
 	if [[ "$update_script_status" == "Installed" ]]; then
 		echo -e "refind_banner_update.sh is already installed, skipping..."
   		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to proceed..."
-		read
+		read -p "Press Enter to proceed..."
 	else
 		echo -e "Installing refind_banner_update.sh..."
 		mkdir -p "$HOME/scripts/refind_banner_update"
@@ -255,60 +318,58 @@ install_refind_banner_update() {
   		
     		echo -e "(refind_banner_update.sh) has been installed successfully."
   		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to proceed..."
-		read
+        read -p "Press Enter to proceed..."
 	fi
 }
 
 # Function to install preconfigured refind.conf
 install_preconfigured_conf() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
 
-	if [[ "$conf_status" == "Installed" ]]; then
+	if [[ "$preconf_status" == "Installed" ]]; then
 		echo -e "(Preconfigured refind.conf) is already installed, skipping."
     		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to proceed..."
-		read
+		read -p "Press Enter to proceed..."
 	else
 		echo -e "Your original refind.conf will be rename as refind.conf.original_backupbyscript"
-  		sudo cp "$ESP_location/refind/refind.conf" "$ESP_location/refind/refind.conf.original_backupbyscript"		
+        if ! sudo cp "$ESP_location/refind/refind.conf" "$ESP_location/refind/refind.conf.original_backupbyscript"; then
+            echo "Failed to backup original refind.conf."
+            return 1
+        fi
   		echo -e "Installing preconfigured refind.conf..."
 		sudo cp refind.conf $ESP_location/refind/refind.conf
     		echo -e "(Preconfigured refind.conf) has been installed successfully."
     		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to proceed..."
-		read
+		read -p "Press Enter to proceed..."
 	fi
 }
 
 # Function to install rEFInd-Haruhi theme
 install_haruhi_theme() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
 
 	if [[ "$theme_status" == "Installed" ]]; then
 		echo -e "(rEFInd-Haruhi theme) is already installed, skipping..."
     		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to proceed..."
-		read
+		read -p "Press Enter to proceed..."
 	else
 		echo -e "Installing rEFInd-Haruhi theme..."
 		sudo cp -r "themes/rEFInd-Haruhi" "$ESP_location/refind/themes/"
   
       		echo -e "(rEFInd-Haruhi theme) has been installed successfully."
       		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to proceed..."
-		read
+		read -p "Press Enter to proceed..."
 	fi
 }
 
 # Function to list backgrounds
 list_backgrounds() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
 
 	# List installed backgrounds if rEFInd-Haruhi theme is installed
 	if [[ "$theme_status" = "Installed" ]]; then
 		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:\n"
-		sudo ls -1 $ESP_location/refind/themes/rEFInd-Haruhi/Background/ || echo -e "No installed backgrounds found in ESP."
+		sudo ls -1 "$ESP_location/refind/themes/rEFInd-Haruhi/Background/" || echo -e "No installed backgrounds found in ESP."
       		echo -e "\n----------------------------------------------------\n"
 	fi
 
@@ -316,13 +377,12 @@ list_backgrounds() {
 	echo -e "Listing available Haruhi Backgrounds to install...\n"
 	ls -1 themes/rEFInd-Haruhi/Background/ || echo -e "No available backgrounds found in the current directory."
       	echo -e "\n----------------------------------------------------\n"
-	echo -e "Press Enter to return to the menu..."
-	read
+	read -p "Press Enter to return to the menu..."
 }
 
 # Function to list backgrounds in absolute path
 list_backgrounds_absolute_path() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
 
 	# List installed backgrounds if rEFInd-Haruhi theme is installed
 	if [[ "$theme_status" = "Installed" ]]; then
@@ -334,21 +394,26 @@ list_backgrounds_absolute_path() {
 
 	# List available backgrounds in the local directory
 	echo -e "Listing available Haruhi Backgrounds to install...\n"
-	ls -1d "$PWD"/themes/rEFInd-Haruhi/Background/* || echo -e "No available backgrounds found in the current directory."
+
+	if [ -d "$PWD/themes/rEFInd-Haruhi/Background/" ]; then
+        ls -1d "$PWD/themes/rEFInd-Haruhi/Background/"*
+    else
+        echo "No available backgrounds found in the current directory."
+    fi
+
       	echo -e "\n----------------------------------------------------\n"
-	echo -e "Press Enter to return to the menu..."
-	read
+	read -p "Press Enter to return to the menu..."
 }
 
 
 # Function to display current theme
 current_theme() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
 
 	# Check if the themes directory exists
-	if [ -d "$ESP_location/refind/themes/" ]; then
+	if sudo test -d "$ESP_location/refind/themes/" ; then
 		# Check if theme directory is not empty
-		if [ "$(ls -A "$ESP_location/refind/themes/")" ]; then
+		if [ "$(sudo ls -A "$ESP_location/refind/themes/")" ]; then
 			# List the contents with absolute paths
 			sudo ls -1d "$ESP_location/refind/themes/"*/
 		else
@@ -359,13 +424,12 @@ current_theme() {
 	fi
 
        	echo -e "\n----------------------------------------------------\n"
-	echo -e "Press Enter to return to the menu..."
-	read
+	read -p "Press Enter to return to the menu..."
 }
 
 # Function to delete Haruhi theme
 delete_haruhi_theme() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
 
         if [[ "$theme_status" == "Installed" ]]; then
 		echo -e "Deleting rEFInd-Haruhi theme..."
@@ -373,24 +437,22 @@ delete_haruhi_theme() {
   		
 		echo -e "rEFInd-Haruhi theme deleted."
  	      	echo -e "\n----------------------------------------------------\n"
-	 	echo -e "Press Enter to return to the menu..."
-		read
+	 	read -p "Press Enter to return to the menu..."
 	else
 		echo -e "(rEFInd-Haruhi theme) is not installed, skipping..."
    	      	echo -e "\n----------------------------------------------------\n"
-	   	echo -e "Press Enter to return to the menu..."
-		read
+	   	read -p "Press Enter to return to the menu..."
         fi
 
 }
 
 # Function to rollback configuration
 rollback_config() {
-	echo -e "" #Skip 1 line to print
+	echo -e "" # Skip 1 line to print
 
-	if [[ "$conf_status" == "Installed" ]] ; then
+	if [[ "$preconf_status" == "Installed" ]] ; then
 		echo -e "Rolling back original configuration..."
-		sudo mv $ESP_location/refind/refind.conf.original_backupbyscrip $ESP_location/refind/refind.conf
+        sudo mv "$ESP_location/refind/refind.conf.original_backupbyscript" "$ESP_location/refind/refind.conf"
 
  		echo -e "Your  refind.conf has rolled back to (refind.conf.original_backupbyscript)"
 
@@ -399,10 +461,73 @@ rollback_config() {
 	fi
  
  	echo -e "\n----------------------------------------------------\n"
-	echo -e "Press Enter to return to the menu..."
-	read
+	read -p "Press Enter to return to the menu..."
 
 }
+
+
+# Function to install all components (install based on secure boot status)
+install_all_components() {
+    echo "" # Skip 1 line to print
+    
+	echo -e "Starting automatic installation of all components..."
+ 	if [[ "$sb_status" == "Enabled" ]]; then
+		install_refind_sb
+ 	else
+  		install_refind
+    fi
+     
+ 	install_refind_banner_update
+	if [[ "$refind_status" == "Installed" ]]; then
+   		install_preconfigured_conf
+		install_haruhi_theme
+	else
+		echo -e "ERROR: We cannot proceed if rEFInd isn't installed"
+	fi
+
+	echo -e "Installation complete!"
+        echo -e "\n----------------------------------------------------\n"
+}
+
+# Function to install selected components
+install_selected_components() {
+    echo "" # Skip 1 line to print
+
+	if [[ "$refind_install" == "YES" ]]; then
+ 		if [ "sb_install" == "YES" ]; then
+			install_refind_sb
+   		else
+            install_refind
+		fi
+	fi
+ 
+	if [[ "$update_script_install" == "YES" ]]; then
+		echo -e "(refind_banner_update.sh) is already installed, skipping..."
+	else
+  		install_refind_banner_update
+	fi
+
+	if [[ refind_status == "Installed" ]]; then
+		if [ "$preconf_install" == "YES" ]; then
+			echo -e "(Preconfigured refind.conf) is already installed, skipping..."
+		else
+			install_preconfigured_conf
+		fi
+
+		if [[ "$theme_install" == "YES" ]]; then
+			theme_install="NO"
+		else
+			install_haruhi_theme
+		fi
+	else
+		echo -e "ERROR: We cannot proceed if rEFInd isn't installed"
+	fi
+
+	echo -e "Installation complete!"
+        echo -e "\n----------------------------------------------------\n"
+}
+
+# ========= Menu Begins here =========
 
 # Functions to toggle options
 toggle_refind() {
@@ -451,7 +576,7 @@ edit_menu() {
 		echo -e "update_script_status (1-5) which component to install:"
 		echo -e "1. rEFInd Boot Manager [$refind_status] {$refind_install}"
 		echo -e "2. refind_banner_update.sh [$update_script_status] {$update_script_install}"
-		echo -e "3. Preconfigured refind.conf [$conf_status] {$preconf_install}"
+		echo -e "3. Preconfigured refind.conf [$preconf_status] {$preconf_install}"
 		echo -e "4. rEFInd-Haruhi [$theme_status] {$theme_install}"
 		echo -e "5. Secure-Boot [$sb_status] {$sb_install}"
 		echo -e "x. Begin installation with options above"
@@ -479,63 +604,6 @@ edit_menu() {
 	done
 }
 
-# Function to install all components (install based on secure boot status)
-install_all_components() {
-	echo -e "Starting automatic installation of all components..."
- 	if [[ "$sb_status" == "Enabled" ]]; then
-		install_refind_sb
- 	else
-  		install_refind
-    	fi
-     
- 	install_refind_banner_update
-	if [[ "$refind_status" == "Installed" ]]; then
-   		install_preconfigured_conf
-		install_haruhi_theme
-	else
-		echo -e "ERROR: We cannot proceed if rEFInd isn't installed"
-	fi
-
-	echo -e "Installation complete!"
-        echo -e "\n----------------------------------------------------\n"
-}
-
-# Function to install selected components
-install_selected_components() {
-
-	if [[ "$refind_install" == "YES" ]]; then
- 		if [ "sb_install" == "YES" ]; then
-			install_refind_sb
-   		else
-     			install_refind
-		fi
-	fi
- 
-	if [[ "$update_script_install" == "YES" ]]; then
-		echo -e "(refind_banner_update.sh) is already installed, skipping..."
-	else
-  		install_refind_banner_update
-	fi
-
-	if [[ refind_status="Installed" ]]; then
-		if [ "$preconf_install" == "YES" ]; then
-			echo -e "(Preconfigured refind.conf) is already installed, skipping..."
-		else
-			install_preconfigured_conf
-		fi
-
-		if [[ "$theme_install" == "YES" ]]; then
-			theme_install="NO"
-		else
-			install_haruhi_theme
-		fi
-	else
-		echo -e "ERROR: We cannot proceed if rEFInd isn't installed"
-	fi
-
-	echo -e "Installation complete!"
-        echo -e "\n----------------------------------------------------\n"
-}
 
 # Function to handle user choices
 handle_choice() {
