@@ -299,11 +299,7 @@ list_backgrounds() {
 		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:\n"
 		sudo ls -1 $ESP_location/refind/themes/rEFInd-Haruhi/Background/ || echo -e "No installed backgrounds found in ESP."
       		echo -e "\n----------------------------------------------------\n"
-	else
- 		echo -e "(rEFInd-Haruhi) is not installed, skipping..."
 	fi
-		echo -e "Press Enter to return to the menu..."
-		read
 
 	# List available backgrounds in the local directory
 	echo -e "Listing available Haruhi Backgrounds to install...\n"
@@ -320,11 +316,7 @@ list_backgrounds_absolute_path() {
 		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:\n"
 		sudo ls -1d $ESP_location/refind/themes/rEFInd-Haruhi/Background/* || echo -e "No installed backgrounds found in ESP."
       		echo -e "\n----------------------------------------------------\n"
-	else
- 		echo -e "(rEFInd-Haruhi) is not installed, skipping..."
 	fi
-		echo -e "Press Enter to return to the menu..."
-		read
 
 
 	# List available backgrounds in the local directory
