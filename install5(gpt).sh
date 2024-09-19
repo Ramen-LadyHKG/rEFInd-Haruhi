@@ -180,9 +180,8 @@ install_secure_boot_component() {
 install_refind() {
 
 if sudo test -d "$ESP_location/refind" ; then
+	echo ""
 	echo -e "rEFInd is already installed on your system, skipping..."
- 	echo -e "Press Enter to return to the menu..."
-	read
 else
  	echo -e "Downloading and Extract rEFInd installation ..."
  	wget https://sourceforge.net/projects/refind/files/${refind_version}/refind-bin-gnuefi-${refind_version}.zip
