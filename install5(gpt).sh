@@ -32,7 +32,7 @@ check_status() {
 	if sudo test -d "$ESP_location/refind" ; then
 		refind_status="Installed"
   		refind_location="$ESP_location/refind"
-	ee
+	else
 		refind_status="Not Installed"
 		refind_location="Unknown"
 	fi
