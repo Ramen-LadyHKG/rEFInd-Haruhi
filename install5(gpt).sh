@@ -172,7 +172,7 @@ install_secure_boot_component() {
   	
        	echo -e "\n----------------------------------------------------\n"
 	
- 	echo -e "Press Enter to return to the menu..."
+	echo -e "Press Enter to proceed..."
 	read
 }
 
@@ -193,6 +193,8 @@ else
 
 	if sudo test -d "$ESP_location/refind" ; then
 		echo -e "rEFInd has successfully installed on your system, proceed..."
+  		echo -e "Press Enter to proceed..."
+		read
 	else
  		echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
    		echo -e "Press Enter to return to the menu..."
@@ -223,7 +225,7 @@ else
 
 	if sudo test -d "$ESP_location/refind" ; then
 		echo -e "rEFInd with Secure Boot has successfully installed on your system, proceed..."
-  		echo -e "Press Enter to return to the menu..."
+		echo -e "Press Enter to proceed..."
 		read
 	else
  		echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
@@ -239,7 +241,7 @@ install_refind_banner_update() {
 	if [[ "$update_script_status" == "Installed" ]]; then
 		echo -e "refind_banner_update.sh is already installed, skipping..."
   		echo -e "\n----------------------------------------------------\n"
-    		echo -e "Press Enter to return to the menu..."
+		echo -e "Press Enter to proceed..."
 		read
 	else
 		echo -e "Installing refind_banner_update.sh..."
@@ -248,7 +250,7 @@ install_refind_banner_update() {
   		
     		echo -e "(refind_banner_update.sh) has been installed successfully."
   		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to return to the menu..."
+		echo -e "Press Enter to proceed..."
 		read
 	fi
 }
@@ -258,15 +260,16 @@ install_preconfigured_conf() {
 	if [[ "$conf_status" == "Installed" ]]; then
 		echo -e "(Preconfigured refind.conf) is already installed, skipping."
     		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to return to the menu..."
+		echo -e "Press Enter to proceed..."
 		read
 	else
 		echo -e "Your original refind.conf will be rename as refind.conf.original_backupbyscript"
-		sudo cp "$ESP_location/refind/refind.conf" "$ESP_location/refind/refind.conf.original_backupbyscript"		echo -e "Installing preconfigured refind.conf..."
+  		sudo cp "$ESP_location/refind/refind.conf" "$ESP_location/refind/refind.conf.original_backupbyscript"		
+  		echo -e "Installing preconfigured refind.conf..."
 		sudo cp refind.conf $ESP_location/refind/refind.conf
     		echo -e "(Preconfigured refind.conf) has been installed successfully."
     		echo -e "\n----------------------------------------------------\n"
-		euse functcho -e "Press Enter to return to the menu..."
+		echo -e "Press Enter to proceed..."
 		read
 	fi
 }
@@ -276,7 +279,7 @@ install_haruhi_theme() {
 	if [[ "$theme_status" == "Installed" ]]; then
 		echo -e "(rEFInd-Haruhi theme) is already installed, skipping..."
     		echo -e "\n----------------------------------------------------\n"
-      		echo -e "Press Enter to return to the menu..."
+		echo -e "Press Enter to proceed..."
 		read
 	else
 		echo -e "Installing rEFInd-Haruhi theme..."
@@ -284,7 +287,7 @@ install_haruhi_theme() {
   
       		echo -e "(rEFInd-Haruhi theme) has been installed successfully."
       		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to return to the menu..."
+		echo -e "Press Enter to proceed..."
 		read
 	fi
 }
