@@ -102,8 +102,9 @@ display_menu() {
 	echo -e "c. Current Installed rEFInd theme"
 	echo -e "d. Delete Haruhi theme"
 	echo -e "e. Edit & Install selected components"
-	echo -e "f. Rollback configuration"
-	echo -e "g. Exit the program"
+	echo -e "f. Fallback configuration"
+ 	echo -e "g. Gather the absolute path of Background list"
+	echo -e "q. Exit the program"
 	echo -e "----------------------------------------------------\n"
 }
 
@@ -292,7 +293,26 @@ install_haruhi_theme() {
 list_backgrounds() {
 	# List installed backgrounds if rEFInd-Haruhi theme is installed
 	if [[ "$theme_status" = "Installed" ]]; then
-		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:"
+		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:\n"
+		sudo ls -1 $ESP_location/refind/themes/rEFInd-Haruhi/Background/ || echo -e "No installed backgrounds found in ESP."
+      		echo -e "\n----------------------------------------------------\n"
+		echo -e "Press Enter to return to the menu..."
+		read
+	fi
+
+	# List available backgrounds in the local directory
+	echo -e "Listing available Haruhi Backgrounds to install...\n"
+	ls -1 /themes/rEFInd-Haruhi/Background/ || echo -e "No available backgrounds found in the current directory."
+      	echo -e "\n----------------------------------------------------\n"
+	echo -e "Press Enter to return to the menu..."
+	read
+}
+
+# Function to list backgrounds in absolute path
+list_backgrounds_absolute_path() {
+	# List installed backgrounds if rEFInd-Haruhi theme is installed
+	if [[ "$theme_status" = "Installed" ]]; then
+		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:\n"
 		sudo ls -1d $ESP_location/refind/themes/rEFInd-Haruhi/Background/* || echo -e "No installed backgrounds found in ESP."
       		echo -e "\n----------------------------------------------------\n"
 		echo -e "Press Enter to return to the menu..."
@@ -300,12 +320,13 @@ list_backgrounds() {
 	fi
 
 	# List available backgrounds in the local directory
-	echo -e "Listing available Haruhi Backgrounds to install..."
+	echo -e "Listing available Haruhi Backgrounds to install...\n"
 	ls -1d "$PWD"/themes/rEFInd-Haruhi/Background/* || echo -e "No available backgrounds found in the current directory."
       	echo -e "\n----------------------------------------------------\n"
 	echo -e "Press Enter to return to the menu..."
 	read
 }
+
 
 # Function to display current theme
 current_theme() {
@@ -505,7 +526,7 @@ handle_choice() {
 			rollback_config
 			;;
 		g)
-			install_selected_components
+			list_backgrounds_absolute_path
 			;;
 		q)
 			echo -e "Exiting the program."
