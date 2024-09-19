@@ -360,7 +360,7 @@ delete_haruhi_theme() {
 
 # Function to rollback configuration
 rollback_config() {
-	if [[ "$conf_status" == "Installed" ] ; then
+	if [[ "$conf_status" == "Installed" ]] ; then
 		echo -e "Rolling back original configuration..."
 		sudo mv $ESP_location/refind/refind.conf.original_backupbyscrip $ESP_location/refind/refind.conf
 
@@ -368,7 +368,8 @@ rollback_config() {
 
 	else
  		echo -e "Original (refind.conf) backup file DOES NOT EXIT, skipping..."
-	
+	fi
+ 
  	echo -e "\n----------------------------------------------------\n"
 	echo -e "Press Enter to return to the menu..."
 	read
