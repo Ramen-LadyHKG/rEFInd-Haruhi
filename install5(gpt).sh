@@ -11,6 +11,11 @@ echo -e "Because files in ESP are only readable or editable by root."
 echo -e "Disclaimer: Please review this code before executing further."
 echo -e "----------------------------------------------------\n"
 
+echo -e "Press Enter to return to the menu..."
+read
+
+clear
+
 # Function to check the status of installed components
 check_status() {
 	# Check ESP location
@@ -211,6 +216,7 @@ else
 	else
  		echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
    		exit 1
+     	fi
 fi
 }
 
@@ -483,5 +489,5 @@ while true; do
 
 	# Add a pause after each action to allow the user to see the output before menu refreshes
 	echo -e "Press Enter to return to the menu..."
-	read
+	readit 1
 done
