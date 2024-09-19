@@ -345,12 +345,19 @@ list_backgrounds_absolute_path() {
 current_theme() {
 	echo -e "" #Skip 1 line to print
 
-	if sudo test -d "$ESP_location/refind/themes" ; then
-		echo -e "Current Installed rEFInd theme...\n"
-		sudo ls -1d $ESP_location/refind/themes/*
- 	else
-  		echo -e "theme directory DOES NOT EXIST in refind\n"
-    	fi
+	# Check if the themes directory exists
+	if [ -d "$ESP_location/refind/themes/" ]; then
+		# Check if theme directory is not empty
+		if [ "$(ls -A "$ESP_location/refind/themes/")" ]; then
+			# List the contents with absolute paths
+			sudo ls -1d "$ESP_location/refind/themes/"*/
+		else
+			echo "Theme directory exists but is empty."
+		fi
+	else
+		echo "The themes directory does not exist."
+	fi
+
        	echo -e "\n----------------------------------------------------\n"
 	echo -e "Press Enter to return to the menu..."
 	read
