@@ -513,8 +513,7 @@ handle_choice() {
 			list_backgrounds
 			;;
 		c)
-			echo -e "Checking current installed rEFInd theme..."
-			sudo ls /boot/efi/EFI/refind/themes || echo -e "No themes found."
+			current_theme
 			;;
 		d)
 			delete_haruhi_theme
