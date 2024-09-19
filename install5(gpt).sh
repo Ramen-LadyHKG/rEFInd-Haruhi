@@ -154,7 +154,9 @@ install_secure_boot_component() {
    		sudo pacman -S openssl mokutil sbsigntools
      	else
       		echo -e "ERROR: We cannot install Secure Boot Component on your distro, skipping..."
-		return 1
+		echo -e "Press Enter to return to the menu..."
+		read
+  		return 1
   	fi
    	mkdir shim-signed && cd shim-signed
    	wget "http://archive.ubuntu.com/ubuntu/pool/main/s/shim-signed/shim-signed_${shim_version##*+ubuntu+}+${shim_version%%+ubuntu*}-0ubuntu1_amd64.deb"
@@ -167,6 +169,9 @@ install_secure_boot_component() {
    	echo -e "Install secure boot components successfully on ($distro_like), proceed... "
   	
        	echo -e "\n----------------------------------------------------\n"
+	
+ 	echo -e "Press Enter to return to the menu..."
+	read
 }
 
 # Function to install rEFInd without secure boot
@@ -174,6 +179,8 @@ install_refind() {
 
 if sudo test -d "$ESP_location/refind" ; then
 	echo -e "rEFInd is already installed on your system, skipping..."
+ 	echo -e "Press Enter to return to the menu..."
+	read
 else
  	echo -e "Downloading and Extract rEFInd installation ..."
  	wget https://sourceforge.net/projects/refind/files/${refind_version}/refind-bin-gnuefi-${refind_version}.zip
@@ -187,7 +194,9 @@ else
 		echo -e "rEFInd has successfully installed on your system, proceed..."
 	else
  		echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
-   		exit 1
+   		echo -e "Press Enter to return to the menu..."
+		read
+     		return 1
      	fi
 fi
 }
@@ -213,9 +222,13 @@ else
 
 	if sudo test -d "$ESP_location/refind" ; then
 		echo -e "rEFInd with Secure Boot has successfully installed on your system, proceed..."
+  		echo -e "Press Enter to return to the menu..."
+		read
 	else
  		echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
-   		exit 1
+   		echo -e "Press Enter to return to the menu..."
+		read
+     		exit 1
      	fi
 fi
 }
@@ -225,13 +238,17 @@ install_refind_banner_update() {
 	if [[ "$update_script_status" == "Installed" ]]; then
 		echo -e "refind_banner_update.sh is already installed, skipping..."
   		echo -e "\n----------------------------------------------------\n"
+    		echo -e "Press Enter to return to the menu..."
+		read
 	else
 		echo -e "Installing refind_banner_update.sh..."
 		mkdir -p "$HOME/scripts/refind_banner_update"
 		cp "refind_banner_update.sh" "$HOME/scripts/refind_banner_update/"
-  		echo -e "(refind_banner_update.sh) has been installed."
+  		
+    		echo -e "(refind_banner_update.sh) has been installed."
   		echo -e "\n----------------------------------------------------\n"
-
+		echo -e "Press Enter to return to the menu..."
+		read
 	fi
 }
 
@@ -240,13 +257,16 @@ install_preconfigured_conf() {
 	if [[ "$conf_status" == "Installed" ]]; then
 		echo -e "(Preconfigured refind.conf) is already installed, skipping."
     		echo -e "\n----------------------------------------------------\n"
-
+		echo -e "Press Enter to return to the menu..."
+		read
 	else
-		echo -e "Installing preconfigured refind.conf..."
+		echo -e "Your original refind.conf will be rename as refind.conf.original_backupbyscript"
+		sudo cp "$ESP_location/refind/refind.conf" "$ESP_location/refind/refind.conf.original_backupbyscript"		echo -e "Installing preconfigured refind.conf..."
 		sudo cp refind.conf $ESP_location/refind/refind.conf
     		echo -e "(Preconfigured refind.conf) has been installed."
     		echo -e "\n----------------------------------------------------\n"
-
+		echo -e "Press Enter to return to the menu..."
+		read
 	fi
 }
 
@@ -255,11 +275,16 @@ install_haruhi_theme() {
 	if [[ "$theme_status" == "Installed" ]]; then
 		echo -e "(rEFInd-Haruhi theme) is already installed, skipping..."
     		echo -e "\n----------------------------------------------------\n"
+      		echo -e "Press Enter to return to the menu..."
+		read
 	else
 		echo -e "Installing rEFInd-Haruhi theme..."
 		sudo cp -r "themes/rEFInd-Haruhi" "$ESP_location/refind/themes/"
+  
       		echo -e "(rEFInd-Haruhi theme) has been installed."
       		echo -e "\n----------------------------------------------------\n"
+		echo -e "Press Enter to return to the menu..."
+		read
 	fi
 }
 
@@ -270,12 +295,16 @@ list_backgrounds() {
 		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:"
 		sudo ls -1 $ESP_location/refind/themes/rEFInd-Haruhi/Background || echo -e "No installed backgrounds found in ESP."
       		echo -e "\n----------------------------------------------------\n"
+		echo -e "Press Enter to return to the menu..."
+		read
 	fi
 
 	# List available backgrounds in the local directory
 	echo -e "Listing available Haruhi Backgrounds to install..."
 	ls -1 themes/rEFInd-Haruhi/Background || echo -e "No available backgrounds found in the current directory."
-      		echo -e "\n----------------------------------------------------\n"
+      	echo -e "\n----------------------------------------------------\n"
+	echo -e "Press Enter to return to the menu..."
+	read
 }
 
 # Function to display current theme
@@ -283,6 +312,8 @@ current_theme() {
 	echo -e "Current Installed rEFInd theme..."
 	sudo ls -1 $ESP_location/refind/themes/
        	echo -e "\n----------------------------------------------------\n"
+	echo -e "Press Enter to return to the menu..."
+	read
 }
 
 # Function to delete Haruhi theme
@@ -290,20 +321,29 @@ delete_haruhi_theme() {
         if [[ "$theme_status" == "Installed" ]]; then
 		echo -e "Deleting rEFInd-Haruhi theme..."
 		sudo rm -rf "$ESP_location/refind/themes/rEFInd-Haruhi"
+  		
 		echo -e "rEFInd-Haruhi theme deleted."
  	      	echo -e "\n----------------------------------------------------\n"
+	 	echo -e "Press Enter to return to the menu..."
+		read
 	else
 		echo -e "(rEFInd-Haruhi theme) is not installed, skipping..."
    	      	echo -e "\n----------------------------------------------------\n"
+	   	echo -e "Press Enter to return to the menu..."
+		read
         fi
 
 }
 
 # Function to rollback configuration
 rollback_config() {
-	echo -e "Rolling back to default configuration..."
-	sudo mv $ESP_location/refind/refind.conf.haruhi $ESP_location/refind/refind.conf
+	echo -e "Rolling back original configuration..."
+	sudo mv $ESP_location/refind/refind.conf.original_backupbyscrip $ESP_location/refind/refind.conf
+
+ 	echo -e "Your  refind.conf has rolled back to (refind.conf.original_backupbyscript)"
         echo -e "\n----------------------------------------------------\n"
+	echo -e "Press Enter to return to the menu..."
+	read
 
 }
 
