@@ -301,7 +301,7 @@ list_backgrounds() {
 
 	# List available backgrounds in the local directory
 	echo -e "Listing available Haruhi Backgrounds to install..."
-	ls -1d "$PWD“/themes/rEFInd-Haruhi/Background/* || echo -e "No available backgrounds found in the current directory."
+	ls -1d "$PWD"/themes/rEFInd-Haruhi/Background/* || echo -e "No available backgrounds found in the current directory."
       	echo -e "\n----------------------------------------------------\n"
 	echo -e "Press Enter to return to the menu..."
 	read
