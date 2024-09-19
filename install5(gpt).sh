@@ -87,7 +87,8 @@ check_status() {
 display_menu() {
 	# Update status before displaying the menu
 	check_status
-
+	
+ 	echo -e ""
 	echo -e "====== Welcome to rEFInd-Haruhi Install script ======"
 	echo -e "Installation Status:"
 	echo -e "1. rEFInd install: $refind_status ($refind_location)"
@@ -266,7 +267,7 @@ install_preconfigured_conf() {
 		sudo cp refind.conf $ESP_location/refind/refind.conf
     		echo -e "(Preconfigured refind.conf) has been installed."
     		echo -e "\n----------------------------------------------------\n"
-		echo -e "Press Enter to return to the menu..."
+		euse functcho -e "Press Enter to return to the menu..."
 		read
 	fi
 }
@@ -302,7 +303,7 @@ list_backgrounds() {
 
 	# List available backgrounds in the local directory
 	echo -e "Listing available Haruhi Backgrounds to install...\n"
-	ls -1 /themes/rEFInd-Haruhi/Background/ || echo -e "No available backgrounds found in the current directory."
+	ls -1 themes/rEFInd-Haruhi/Background/ || echo -e "No available backgrounds found in the current directory."
       	echo -e "\n----------------------------------------------------\n"
 	echo -e "Press Enter to return to the menu..."
 	read
