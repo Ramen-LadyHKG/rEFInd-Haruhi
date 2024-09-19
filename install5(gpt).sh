@@ -32,7 +32,7 @@ check_status() {
 	if sudo test -d "$ESP_location/refind" ; then
 		refind_status="Installed"
   		refind_location="$ESP_location/refind"
-	else
+	ee
 		refind_status="Not Installed"
 		refind_location="Unknown"
 	fi
@@ -293,7 +293,7 @@ list_backgrounds() {
 	# List installed backgrounds if rEFInd-Haruhi theme is installed
 	if [[ "$theme_status" = "Installed" ]]; then
 		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:"
-		sudo ls -1 $ESP_location/refind/themes/rEFInd-Haruhi/Background || echo -e "No installed backgrounds found in ESP."
+		sudo ls -1d $ESP_location/refind/themes/rEFInd-Haruhi/Background/* || echo -e "No installed backgrounds found in ESP."
       		echo -e "\n----------------------------------------------------\n"
 		echo -e "Press Enter to return to the menu..."
 		read
@@ -301,7 +301,7 @@ list_backgrounds() {
 
 	# List available backgrounds in the local directory
 	echo -e "Listing available Haruhi Backgrounds to install..."
-	ls -1 themes/rEFInd-Haruhi/Background || echo -e "No available backgrounds found in the current directory."
+	ls -1d "$PWD“/themes/rEFInd-Haruhi/Background/* || echo -e "No available backgrounds found in the current directory."
       	echo -e "\n----------------------------------------------------\n"
 	echo -e "Press Enter to return to the menu..."
 	read
@@ -309,8 +309,9 @@ list_backgrounds() {
 
 # Function to display current theme
 current_theme() {
-	echo -e "Current Installed rEFInd theme..."
-	sudo ls -1 $ESP_location/refind/themes/
+	echo -e "Current Installed rEFInd theme...\n"
+	sudo ls -1d $ESP_location/refind/themes/*
+ 
        	echo -e "\n----------------------------------------------------\n"
 	echo -e "Press Enter to return to the menu..."
 	read
