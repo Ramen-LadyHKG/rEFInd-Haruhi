@@ -246,7 +246,7 @@ install_refind_banner_update() {
 		mkdir -p "$HOME/scripts/refind_banner_update"
 		cp "refind_banner_update.sh" "$HOME/scripts/refind_banner_update/"
   		
-    		echo -e "(refind_banner_update.sh) has been installed."
+    		echo -e "(refind_banner_update.sh) has been installed successfully."
   		echo -e "\n----------------------------------------------------\n"
 		echo -e "Press Enter to return to the menu..."
 		read
@@ -264,7 +264,7 @@ install_preconfigured_conf() {
 		echo -e "Your original refind.conf will be rename as refind.conf.original_backupbyscript"
 		sudo cp "$ESP_location/refind/refind.conf" "$ESP_location/refind/refind.conf.original_backupbyscript"		echo -e "Installing preconfigured refind.conf..."
 		sudo cp refind.conf $ESP_location/refind/refind.conf
-    		echo -e "(Preconfigured refind.conf) has been installed."
+    		echo -e "(Preconfigured refind.conf) has been installed successfully."
     		echo -e "\n----------------------------------------------------\n"
 		euse functcho -e "Press Enter to return to the menu..."
 		read
@@ -282,7 +282,7 @@ install_haruhi_theme() {
 		echo -e "Installing rEFInd-Haruhi theme..."
 		sudo cp -r "themes/rEFInd-Haruhi" "$ESP_location/refind/themes/"
   
-      		echo -e "(rEFInd-Haruhi theme) has been installed."
+      		echo -e "(rEFInd-Haruhi theme) has been installed successfully."
       		echo -e "\n----------------------------------------------------\n"
 		echo -e "Press Enter to return to the menu..."
 		read
