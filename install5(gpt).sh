@@ -59,7 +59,7 @@ check_status() {
 	else
 		theme_status="Not Installed"
 	fi
-
+	preconf_install="YES"
 	# Check Secure Boot status
 	command -v mokutil >/dev/null 2>&1
 	if [ $? -eq 0 ]; then
@@ -122,19 +122,19 @@ else
 	update_script_install="YES"
 fi
 
-if [ "$conf_status" == "Installed" ]; then
+if [[ "$conf_status" == "Installed" ]]; then
 	conf_install="NO"
 else
 	conf_install="YES"
 fi
 
-if [ "$theme_status" == "Installed" ]; then
+if [[ "$theme_status" == "Installed" ]]; then
 	theme_install="NO"
 else
 	theme_install="YES"
 fi
 
-if [ "$sb_status" == "Enabled" ]; then
+if [[ "$sb_status" == "Enabled" ]]; then
 	sb_install="YES"
 else
 	sb_install="NO"
@@ -144,13 +144,13 @@ fi
 install_secure_boot_component() {
 	echo -e "Secure Boot Components {openssl mokutil sbsigntools} installing..."
 
- 	if [ "$distro_like" =~ "debian" ]; then
+ 	if [[ "$distro_like" =~ "debian" ]]; then
   		sudo apt install openssl mokutil sbsigntool
-    	elif [ "$distro_like" =~ "fedora" ]; then
+    	elif [[ "$distro_like" =~ "fedora" ]]; then
      		sudo dnf install openssl mokutil sbsigntools 
-    	elif [ "$distro_like" =~ "suse" ]; then
+    	elif [[ "$distro_like" =~ "suse" ]]; then
 		sudo zypper install openssl mokutil sbsigntools
-  	elif [ "$distro_like" =~ "arch" ]; then
+  	elif [[ "$distro_like" =~ "arch" ]]; then
    		sudo pacman -S openssl mokutil sbsigntools
      	else
       		echo -e "ERROR: We cannot install Secure Boot Component on your distro, skipping..."
@@ -176,7 +176,7 @@ if sudo test -d "$ESP_location/refind" ; then
 	echo -e "rEFInd is already installed on your system, skipping..."
 else
  	echo -e "Downloading and Extract rEFInd installation ..."
- 	wget https://sourceforge.net/projects/refind/files/$(refind_version)/refind-bin-gnuefi-$(refind_version).zip
+ 	wget https://sourceforge.net/projects/refind/files/${refind_version}/refind-bin-gnuefi-${refind_version}.zip
 	unzip -a refind-bin-gnuefi-$(refind_version).zip
  
   	echo -e "Installing (rEFInd without Secure Boot) ..."
@@ -222,7 +222,7 @@ fi
 
 # Function to install refind_banner_update.sh
 install_refind_banner_update() {
-	if [ "$update_script_status" == "Installed" ]; then
+	if [[ "$update_script_status" == "Installed" ]]; then
 		echo -e "refind_banner_update.sh is already installed, skipping..."
   		echo -e "\n----------------------------------------------------\n"
 	else
@@ -237,7 +237,7 @@ install_refind_banner_update() {
 
 # Function to install preconfigured refind.conf
 install_preconfigured_conf() {
-	if [ "$conf_status" == "Installed" ]; then
+	if [[ "$conf_status" == "Installed" ]]; then
 		echo -e "(Preconfigured refind.conf) is already installed, skipping."
     		echo -e "\n----------------------------------------------------\n"
 
@@ -252,7 +252,7 @@ install_preconfigured_conf() {
 
 # Function to install rEFInd-Haruhi theme
 install_haruhi_theme() {
-	if [ "$theme_status" == "Installed" ]; then
+	if [[ "$theme_status" == "Installed" ]]; then
 		echo -e "(rEFInd-Haruhi theme) is already installed, skipping..."
     		echo -e "\n----------------------------------------------------\n"
 	else
@@ -266,7 +266,7 @@ install_haruhi_theme() {
 # Function to list backgrounds
 list_backgrounds() {
 	# List installed backgrounds if rEFInd-Haruhi theme is installed
-	if [ "$theme_status" = "Installed" ]; then
+	if [[ "$theme_status" = "Installed" ]]; then
 		echo -e "Listing installed rEFInd-Haruhi Backgrounds in ESP:"
 		sudo ls -1 $ESP_location/refind/themes/rEFInd-Haruhi/Background || echo -e "No installed backgrounds found in ESP."
       		echo -e "\n----------------------------------------------------\n"
@@ -287,7 +287,7 @@ current_theme() {
 
 # Function to delete Haruhi theme
 delete_haruhi_theme() {
-        if [ "$theme_status" == "Installed" ]; then
+        if [[ "$theme_status" == "Installed" ]]; then
 		echo -e "Deleting rEFInd-Haruhi theme..."
 		sudo rm -rf "$ESP_location/refind/themes/rEFInd-Haruhi"
 		echo -e "rEFInd-Haruhi theme deleted."
@@ -305,6 +305,47 @@ rollback_config() {
 	sudo mv $ESP_location/refind/refind.conf.haruhi $ESP_location/refind/refind.conf
         echo -e "\n----------------------------------------------------\n"
 
+}
+
+# Functions to toggle options
+toggle_refind() {
+	if [[ "$refind_install" == "YES" ]]; then
+		refind_install="NO"
+	else
+		refind_install="YES"
+	fi
+}
+
+toggle_banner_update() {
+	if [[ "$update_script_install" == "YES" ]]; then
+		update_script_install="NO"
+	else
+		update_script_install="YES"
+	fi
+}
+
+toggle_conf() {
+	if [[ "$preconf_install" == "YES" ]]; then
+		preconf_install="NO"
+	else
+		preconf_install="YES"
+	fi
+}
+
+toggle_haruhi_theme() {
+	if [[ "$theme_install" == "YES" ]]; then
+		theme_install="NO"
+	else
+		theme_install="YES"
+	fi
+}
+
+toggle_secure_boot() {
+	if [[ "$sb_install" == "YES" ]]; then
+		sb_install="NO"
+	else
+		sb_install="YES"
+	fi
 }
 
 # Function for edit menu
@@ -344,14 +385,14 @@ edit_menu() {
 # Function to install all components (install based on secure boot status)
 install_all_components() {
 	echo -e "Starting automatic installation of all components..."
- 	if [ "$sb_status" == "Enabled" ]; then
+ 	if [[ "$sb_status" == "Enabled" ]]; then
 		install_refind_sb
  	else
   		install_refind
     	fi
      
  	install_refind_banner_update
-	if [ refind_status="Installed" ]; then
+	if [[ "$refind_status" == "Installed" ]]; then
    		install_preconfigured_conf
 		install_haruhi_theme
 	else
@@ -365,7 +406,7 @@ install_all_components() {
 # Function to install selected components
 install_selected_components() {
 
-	if [ "$refind_install" == "YES" ]; then
+	if [[ "$refind_install" == "YES" ]]; then
  		if [ "sb_install" == "YES" ]; then
 			install_refind_sb
    		else
@@ -373,20 +414,20 @@ install_selected_components() {
 		fi
 	fi
  
-	if [ "$update_script_install" == "YES" ]; then
+	if [[ "$update_script_install" == "YES" ]]; then
 		echo -e "(refind_banner_update.sh) is already installed, skipping..."
 	else
   		install_refind_banner_update
 	fi
 
-	if [ refind_status="Installed" ]; then
+	if [[ refind_status="Installed" ]]; then
 		if [ "$preconf_install" == "YES" ]; then
 			echo -e "(Preconfigured refind.conf) is already installed, skipping..."
 		else
 			install_preconfigured_conf
 		fi
 
-		if [ "$theme_install" == "YES" ]; then
+		if [[ "$theme_install" == "YES" ]]; then
 			theme_install="NO"
 		else
 			install_haruhi_theme
@@ -397,47 +438,6 @@ install_selected_components() {
 
 	echo -e "Installation complete!"
         echo -e "\n----------------------------------------------------\n"
-}
-
-# Functions to toggle options
-toggle_refind() {
-	if [ "$refind_install" == "YES" ]; then
-		refind_install="NO"
-	else
-		refind_install="YES"
-	fi
-}
-
-toggle_banner_update() {
-	if [ "$update_script_install" == "YES" ]; then
-		update_script_install="NO"
-	else
-		update_script_install="YES"
-	fi
-}
-
-toggle_conf() {
-	if [ "$preconf_install" == "YES" ]; then
-		preconf_install="NO"
-	else
-		preconf_install="YES"
-	fi
-}
-
-toggle_haruhi_theme() {
-	if [ "$theme_install" == "YES" ]; then
-		theme_install="NO"
-	else
-		theme_install="YES"
-	fi
-}
-
-toggle_secure_boot() {
-	if [ "$sb_install" == "YES" ]; then
-		sb_install="NO"
-	else
-		sb_install="YES"
-	fi
 }
 
 # Function to handle user choices
