@@ -480,15 +480,17 @@ install_all_components() {
 	else
 		install_refind
 	fi
-
+	check_status
 	install_refind_banner_update
+ 	check_status
 	if [[ "$refind_status" == "Installed" ]]; then
 		install_preconfigured_conf
+  		check_status
 		install_haruhi_theme
 	else
 		echo -e "ERROR: We cannot proceed if rEFInd isn't installed"
 	fi
-
+	check_status
 	echo -e "Installation complete!"
 	echo -e "\n----------------------------------------------------\n"
 }
@@ -496,7 +498,8 @@ install_all_components() {
 # Function to install selected components
 install_selected_components() {
 	echo "" # Skip 1 line to print
-
+	check_status
+	echo -e "\n----------------------------------------------------\n"
 	if [[ "$refind_install" == "YES" ]]; then
 		if [ "sb_install" == "YES" ]; then
 			install_refind_sb
@@ -504,25 +507,27 @@ install_selected_components() {
 			install_refind
 		fi
 	fi
- 
+ 	check_status
+	echo -e "\n----------------------------------------------------\n" 
 	if [[ "$update_script_install" == "YES" ]]; then
 		install_refind_banner_update
 	fi
-
+	echo -e "\n----------------------------------------------------\n"
+ 	check_status
 	if [[ refind_status == "Installed" ]]; then
 		if [ "$preconf_install" == "YES" ]; then
 			echo -e "(Preconfigured refind.conf) is already installed, skipping..."
 		else
 			install_preconfigured_conf
 		fi
-
+		check_status
 		if [[ "$theme_install" == "YES" ]]; then
 			install_haruhi_theme
 		fi
 	else
 		echo -e "ERROR: We cannot proceed if rEFInd isn't installed"
 	fi
-
+	check_status
 	echo -e "Installation complete!"
 	echo -e "\n----------------------------------------------------\n"
 }
