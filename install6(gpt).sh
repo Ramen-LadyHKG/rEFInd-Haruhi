@@ -368,7 +368,7 @@ install_haruhi_theme() {
 		echo -e "(rEFInd-Haruhi theme) is already installed, skipping..."
 	else
 		echo -e "Installing rEFInd-Haruhi theme..."
-		sudo cp -r "themes/rEFInd-Haruhi" "$ESP_location/refind/themes/"
+		sudo cp -r "themes" "$ESP_location/refind/"
 
 		echo -e "(rEFInd-Haruhi theme) has been installed successfully."
 	fi
