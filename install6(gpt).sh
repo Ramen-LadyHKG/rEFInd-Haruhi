@@ -78,6 +78,11 @@ check_status() {
 	distro=$(grep "^ID=" /etc/os-release | cut -d'=' -f2 | tr -d '"')
 	distro_like=$(grep "^ID_LIKE=" /etc/os-release | cut -d'=' -f2 | tr -d '"')
 
+	# If ID_LIKE does not exist, set it to the value of ID
+	if [ -z "$distro_like" ]; then
+		distro_like="$distro"
+	fi
+
 	# List of supported distros
 	supported_distros=("fedora" "ubuntu" "debian" "arch" "suse")
 
