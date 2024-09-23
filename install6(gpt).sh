@@ -317,6 +317,7 @@ install_refind_sb() {
 
 		if sudo test -d "$ESP_location/refind" ; then
 			echo -e "rEFInd with Secure Boot has successfully installed on your system, proceed..."
+   			refind_install=NO
 			read -p "Press Enter to proceed..."
 		else
 			echo -e "ERROR: For some reason, rEFInd couldn't install on you system. Exiting..."
@@ -358,7 +359,7 @@ install_preconfigured_conf() {
 			return 1
 		fi
 		echo -e "Installing preconfigured refind.conf..."
-		sudo cp refind.conf $ESP_location/refind/refind.conf || echo -e "ERROR: (Preconfigured refind.conf) couldn't install, skipping..."
+		sudo cp refind.conf $ESP_location/refind/refind.conf || echo -e "ERROR: (Preconfigured refind.conf) couldn't install, skipping..." 
 		echo -e "(Preconfigured refind.conf) has been installed successfully."
 		echo -e "\n----------------------------------------------------\n"
 		read -p "Press Enter to proceed..."
@@ -373,7 +374,7 @@ install_haruhi_theme() {
 		echo -e "WARNING! (rEFInd-Haruhi theme) is already installed, skipping..."
 	else
 		echo -e "Installing rEFInd-Haruhi theme..."
-		sudo cp -r "themes" "$ESP_location/refind/"
+		sudo cp -r "themes" "$ESP_location/refind/" || echo -e 
 
 		echo -e "(rEFInd-Haruhi theme) has been installed successfully."
 	fi
@@ -515,7 +516,7 @@ install_selected_components() {
 	fi
 	echo -e "\n----------------------------------------------------\n"
  	check_status
-	if [[ refind_status == "Installed" ]]; then
+	if [[ $refind_status == "Installed" ]]; then
 		if [ "$preconf_install" == "YES" ]; then
 			echo -e "WARNING! (Preconfigured refind.conf) is already installed, skipping..."
 		else
